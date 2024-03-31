@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="IA-CSS.css">
+    <title>Loterie ETH-Sepolia Apetrea Angelos</title>
+
+    <style>
+        body {
+          text-align: center;
+          font-family: Arial, Helvetica, sans-serif;
+          }
+        
+        div {
+          width: 50%;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          }
+  
+        #lotteryBuyerSection {
+          background-color:darkgray;
+          } 
+        
+        #lotteryOwnerSection {
+            background-color: yellow;
+          } 
+          
+        #extractWinnerSection {
+          background-color: yellowgreen;
+          width: 80%;
+          } 
+          
+        input {
+          width: 75%;
+          margin: auto;
+          }
+          
+        button {
+          width: 50%;
+          margin:  auto;
+          }
+        </style>
+  
+      <script type = "module">
+        // Import the ethers.js library/module for interacting with blockchains
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.esm.min.js";
+        
+        // Definitions for the SmartContract: address & ABI
+        const sLotteryContractAddress = "0x7d9208359F130461f825073bAf0E88C82585d18E";
+        const sLotteryContractABI = [{"inputs":[],
+                                        "stateMutability":"nonpayable",
+                                        "type":"constructor"},
+    
+                                        {"inputs":[],
+                                        "name":"buyLotteryTicket",
+                                        "outputs":[],
+                                        "stateMutability":"payable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"buySingleLotteryTicket",
+                                        "outputs":[],
+                                        "stateMutability":"payable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"collectBankedFees",
+                                        "outputs":[],
+                                        "stateMutability":"nonpayable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"currentPot",
+                                        "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
+                                        "stateMutability":"view",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"endLotteryAndSendPrize",
+                                        "outputs":[],
+                                        "stateMutability":"nonpayable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"firstPrizePotShare",
+                                        "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
+                                        "stateMutability":"view",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"myLottery",
+                                        "outputs":[{"internalType":"string",
+                                              "name":"lotteryTitle",
+                                              "type":"string"},
+                                              {"internalType":"bool",
+                                              "name":"lotteryTypeIsSingleTicket",
+                                              "type":"bool"},
+                                              {"internalType":"uint256",
+                                              "name":"lotteryStartDate",
+                                              "type":"uint256"},
+                                              {"internalType":"uint256",
+                                              "name":"lotteryTicketPrice",
+                                              "type":"uint256"},
+                                              {"internalType":"bool",
+                                              "name":"lotteryIsOpen",
+                                              "type":"bool"},
+                                              {"internalType":"address",
+                                              "name":"lotteryOwner",
+                                              "type":"address"},
+                                              {"internalType":"address payable",
+                                              "name":"lotteryManager",
+                                              "type":"address"}],
+                                        "stateMutability":"view",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[{"internalType":"bool",
+                                              "name":"openMyLottery",
+                                              "type":"bool"}],
+                                        "name":"openOrCloseLottery",
+                                        "outputs":[],
+                                        "stateMutability":"nonpayable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[{"internalType":"string",
+                                              "name":"myLotteryTitle",
+                                              "type":"string"},
+                                            {"internalType":"uint256",
+                                              "name":"myLotteryStartDate",
+                                              "type":"uint256"},
+                                            {"internalType":"uint256",
+                                              "name":"myLotteryTicketPrice",
+                                              "type":"uint256"},
+                                            {"internalType":"address payable",
+                                              "name":"myLotteryManager",
+                                              "type":"address"},
+                                            {"internalType":"bool",
+                                              "name":"myLotteryIsSingleTicket",
+                                              "type":"bool"}],
+                                        "name":"runNewLottery",
+                                        "outputs":[],
+                                        "stateMutability":"nonpayable",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"secondPrizePotShare",
+                                        "outputs":[{"internalType":"uint256",
+                                              "name":"",
+                                              "type":"uint256"}],
+                                        "stateMutability":"view",
+                                        "type":"function"},
+                                        
+                                        {"inputs":[],
+                                        "name":"ticketFeeShare",
+                                        "outputs":[{"internalType":"uint256",
+                                                    "name":"",
+                                              "type":"uint256"}],
+                                        "stateMutability":"view", 
+                                        "type":"function"}];
+            
+        // Get the signer (e.g. connected MetaMask account) that will author/sign the transactions on the blockchain
+        async function connectMetamaskWallet() {
+          try {
+            // Request account access
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  
+            // Use the first account as the selected address (or the one from the Sepolia blockchain, if there are more)
+            const selectedAddress = accounts[0];
+  
+            // Create ethers provider and signer
+            const providerConnectionToSepoliaBlockChain = new ethers.providers.Web3Provider(window.ethereum);
+            const signerBlockChainAccount = providerConnectionToSepoliaBlockChain.getSigner();
+  
+            alert(`Conexiune la wallet MetaMask realizata cu succes: ${selectedAddress}`);
+          } catch (error) {
+              console.error('Error conectare to wallet MetaMask:', error);
+                          }
+        }
+        
+        async function runNew() {    
+          try {
+            // Request account access
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            // Use the first account as the selected address (or the one from the Sepolia blockchain, if there are more)
+            const selectedAddress = accounts[0];
+            // Create ethers provider and signer
+            const providerConnectionToSepoliaBlockChain = new ethers.providers.Web3Provider(window.ethereum);
+            const signerBlockChainAccount = providerConnectionToSepoliaBlockChain.getSigner();
+            
+            //Create contract instance
+            const sLotteryContract = new ethers.Contract(sLotteryContractAddress, sLotteryContractABI, signerBlockChainAccount);
+  
+            // Get the values of the parameters for the function call from the front-end
+            const lotName = document.getElementById("lotteryTitle").value;
+            const lotStartDate = document.getElementById("lotteryStartDate").value;
+            const lotTicketPrice = ethers.utils.parseEther(document.getElementById("lotteryTicketPrice").value);
+            const lotIsSingleTicket = 'true';  
+            const lotTicketManager = selectedAddress;
+           
+            // Call the function from the lottery smart contract
+            const transactionCreateLoterry = await sLotteryContract.runNewLottery(lotName, lotStartDate, lotTicketPrice,lotTicketManager,lotIsSingleTicket);
+            // Wait for the transaction to be mined
+            await transactionCreateLoterry.wait();
+            alert('Noua loterie creata cu succes!');
+  
+            } catch (error) {
+                console.error('Error creare o noua loterie:', error);
+                            }
+          }
+        
+        async function extractWinners() {
+          try {
+            // Request account access
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            // Use the first account as the selected address (or the one from the Sepolia blockchain, if there are more)
+            const selectedAddress = accounts[0];
+            // Create ethers provider and signer
+            const providerConnectionToSepoliaBlockChain = new ethers.providers.Web3Provider(window.ethereum);
+            const signerBlockChainAccount = providerConnectionToSepoliaBlockChain.getSigner();
+            
+            //Create contract instance
+            const sLotteryContract = new ethers.Contract(sLotteryContractAddress, sLotteryContractABI, signerBlockChainAccount);
+  
+            // Call the function from the lottery smart contract
+            const openMyLottery = false;
+            const transactionCloseLotery = await sLotteryContract.openOrCloseLottery(openMyLottery);
+            // Wait for the transaction to be mined
+            await transactionCloseLotery.wait();
+            alert('Loteria existenta s-a inchis! Nu se mai pot achizitiona noi bilete!');
+  
+            // Call the function from the lottery smart contract
+            const transactionEndLotteryAndSendPrizes = await sLotteryContract.endLotteryAndSendPrize();
+            // Wait for the transaction to be mined
+            await transactionEndLotteryAndSendPrizes.wait();
+            alert('Premiile distribuite cu succes castigatorilor!');
+  
+            } catch (error) {
+                console.error('Error inchidere loterie si extragere castigatori:', error);
+                            }
+          }
+        
+        async function buyTicket() {
+          try {
+            // Request account access
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            // Use the first account as the selected address (or the one from the Sepolia blockchain, if there are more)
+            const selectedAddress = accounts[0];
+            // Create ethers provider and signer
+            const providerConnectionToSepoliaBlockChain = new ethers.providers.Web3Provider(window.ethereum);
+            const signerBlockChainAccount = providerConnectionToSepoliaBlockChain.getSigner();
+            
+            //Create contract instance
+            const sLotteryContract = new ethers.Contract(sLotteryContractAddress, sLotteryContractABI, signerBlockChainAccount);
+  
+             // Call the function from the lottery smart contract
+            const transactionBuyLotteryTicket = await sLotteryContract.buySingleLotteryTicket();
+            console.log('Transaction Hash:', transactionBuyLotteryTicket.hash);
+            // Wait for the transaction to be mined
+            await transactionBuyLotteryTicket.wait();
+            alert('Bilet la tombola cumparat cu succes !');
+  
+            } catch (error) {
+                console.error('Error inchidere loterie si extragere castigatori:', error);
+                            }
+          }
+        
+        // Add click event listener to the button
+        const buttonConnectWallet = document.getElementById('connectMetamaskWallet');
+        buttonConnectWallet.addEventListener('click', async () => {
+              // Call the asynchronous function
+              const data = await connectMetamaskWallet();
+           });
+        const buttonRunNew = document.getElementById('runNewLotButton');
+        buttonRunNew.addEventListener('click', async () => {
+              // Call the asynchronous function
+              const data = await runNew();
+           });
+        const buttonExtractWinners = document.getElementById('extractWinnersButton');
+        buttonExtractWinners.addEventListener('click', async () => {
+              // Call the asynchronous function
+              const data = await extractWinners();
+           });
+        const buttonBuyTicket = document.getElementById('buyTicketButton');
+        buttonBuyTicket.addEventListener('click', async () => {
+              // Call the asynchronous function
+              const data = await buyTicket();
+           });
+        
+          ////////////////////
+      </script>
+
+</head>
+<body>
+    <h1>Aceasta este o aplicatie Web3 de tip Loterie</h1>
+    <p>Pentru inceput verfica accesul la wallet-ul tau Metamask pentru aceasta pagina/aplicatie:</p> <br />
+    <button id="connectMetamaskWallet">Verifica/Conecteaza Wallet-ul tau Metamask</button> <br/> <br/>
+    <div id = "lotteryOwnerSection">
+      <h2>Sectiune rezervata pt Managerul Loteriei</h1>
+      <p>De aici poti configura o loterie </p>
+      <label for="ownerLottery">Adresa ta de wallet (Metamask):</label> <br />
+      <input type="text" id="ownerLottery" readonly/> <br />
+      <div id ="newLoterySection">
+        <p>Completeaza detaliile unei noi loterii:</p> <br/>
+        <label for = "lotteryTitle"> Denumire loterie </label>
+        <input type="text" id="lotteryTitle" /> <br/>
+
+        <label for = "lotteryStartDate"> Data de inceput </label>
+        <input type="text" id="lotteryStartDate" />  <br/>
+
+        <label for = "lotteryTicketPrice"> Pret bilet (Ethers) </label>
+        <input type="number" id="lotteryTicketPrice" /> <br/>
+
+        <button id="runNewLotButton">Initiaza o noua loterie</button> <br/>
+       </div>
+      <div id = "extractWinnerSection">
+      <p>Daca exista deja o loterie poti extrage castigatorii </p>
+      <button id="extractWinnersButton">Extrage castigatorii</button>
+      <p>*******************</p>
+       </div>
+    </div>
+
+
+    <div id = "lotteryBuyerSection">
+      <h2>Sectiune rezervata pt participantii la Loterie</h2>
+      <p>De aici poti cumpara un bilet.</p>
+      <button id="buyTicketButton">Cumpara bilet loterie</button>
+      <p>***************************</p>
+    </div>
+  
+  </body>
+</html>

@@ -1,0 +1,15 @@
+.bord1{
+    padding-bottom: 10 rem;
+    background-color: antiquewhite;
+    text-align: center;
+}
+.t{
+    font-family: Helvetica;
+    font-size: xx-large;
+    color: black;
+}
+.box1{
+    font-size: x-large;
+    height: 5rem;
+    width: 70rem;
+}
